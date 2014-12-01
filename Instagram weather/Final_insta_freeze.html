@@ -1,0 +1,153 @@
+<html>
+  <head>
+    <title>instagram &nbsp; Wunderground</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+    </style>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src ="http://code.highcharts.com/highcharts.js"></script>
+    <script>
+    $(document).ready(function(){
+
+
+
+        var drawChart = function(data) {
+
+
+            $('#container').highcharts({
+                chart: {
+                    plotBackgroundColor: null,
+                    plotBorderWidth: 1,//null,
+                    plotShadow: false
+                },
+                title: {
+                    text: 'The Current Coldest places in America, as Told by Instagram "Freezing" tags'
+                },
+                tooltip: {
+                    pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                },
+                plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: true,
+                            format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                            style: {
+                                color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                            }
+                        }
+                    }
+                },
+                series: [{
+                    type: 'pie',
+                    name: 'Browser share',
+                    data: data
+                  }]
+            });
+
+        }
+
+
+        var stateCounter = {};
+
+        var statesAbbr = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS",
+         "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
+
+        var getWeather = function(photoTotal, weatherLocationUrl) {
+            $.getJSON(weatherLocationUrl, function(weather){
+               console.log(weather);
+               
+                    if(weather.location.country_name === "USA"){   
+                        // console.log(weather.location.country_name)
+                        var weatherState = weather.location.state
+                        console.log(weatherState)
+
+                        if(weatherState in stateCounter) {
+                            stateCounter[weatherState]++;    
+                        } else {
+                            stateCounter[weatherState] = 1;
+                        }
+                                  
+                    }else(console.log("Location is NOT in the USA"))
+                
+
+                processedPhotos++;
+
+                // console.log(photoTotal, processedPhotos);
+                if(photoTotal === processedPhotos) {
+                    console.log("OK, now I'm ready to draw the chart");
+
+                    console.log(stateCounter);
+
+                    var data = [];
+                    for(var i = 0; i<statesAbbr.length; i++) {
+
+                        console.log(stateCounter[statesAbbr[i]]);
+                        if(stateCounter[statesAbbr[i]] != null) {
+                            data.push([statesAbbr[i], stateCounter[statesAbbr[i]]])
+                        }
+                    }
+
+                    console.log(data);
+
+                    // var data = [
+                    //     ['California', california],
+                    //     ['North Carloina', northcarloina]
+                    // ] 
+
+                    drawChart(data);
+                }
+
+
+
+            }); //end of $.getJSON
+        } //end of function getWeather(); 
+
+
+        var processedPhotos = 0;
+      $.getJSON('http://cooper-union-instagram-proxy.herokuapp.com/search/tag/freezing?count=100', function(instagram){
+         console.log(instagram);
+
+
+            //loop through the photos
+            var manualCounter = 0;
+            for (var l = 0; l<instagram.length; l++) {
+                if(instagram[l].location != null) {
+                    manualCounter++;
+                }
+
+            }
+
+
+            for(var i=0; i<instagram.length; i++) {
+              if(instagram[i].location != null) {
+                var lat = instagram[i].location.latitude;
+                var lon = instagram[i].location.longitude;
+              
+
+
+                var weatherLocationUrl = 'http://cooper-union-weather-proxy.herokuapp.com/location/' + lat + '/' + lon;
+                getWeather(manualCounter, weatherLocationUrl);
+
+
+              } 
+            }
+   
+        });
+
+    });
+
+
+    </script>
+  </head>
+        <body>
+            <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+        </body>
+</html>
