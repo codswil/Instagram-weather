@@ -1,4 +1,0 @@
-Instagram-weather
-=================
-
-class assignment 
